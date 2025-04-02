@@ -1,0 +1,10 @@
+package-lock.json
+build
+dist
+node_modules
+unity/*/Editor
+/.vs
+/.vscode
+/obj/Debug
+/yarn.lock
+/_agent.js
