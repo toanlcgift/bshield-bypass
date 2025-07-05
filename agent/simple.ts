@@ -1,39 +1,20 @@
 if (ObjC.available) {
+    const className = "ShieldLoader";
+    const methodName = "+initShield";
+
     try {
-        var className = "ShieldLoader";
+        const targetMethod = ObjC.classes[className][methodName];
 
-        // ---- Replace +[ShieldLoader initShield] ----
-        var initShield = ObjC.classes[className]["+ initShield"];
-        if (initShield) {
-            Interceptor.replace(initShield.implementation, new NativeCallback(function () {
-                console.log("[*] Replaced +initShield");
-                // Custom behavior here
-                // Do nothing or log
-                // return 'nil' if return type is object
-                return ptr("0x0");
-            }, 'pointer', [])); // Return type: id (pointer), no args
-        } else {
-            console.log("[-] Method not found: +initShield");
-        }
+        Interceptor.replace(targetMethod.implementation, new NativeCallback(function (self, _cmd) {
+            console.log("[*] Replaced +[ShieldLoader initShield]");
 
-        // ---- Replace +[ShieldLoader loadShield:] ----
-        var loadShield = ObjC.classes[className]["+ loadShield:"];
-        if (loadShield) {
-            Interceptor.replace(loadShield.implementation, new NativeCallback(function (self, sel, arg1) {
-                var obj = new ObjC.Object(arg1);
-                console.log("[*] Replaced +loadShield:");
-                console.log("Argument: " + obj.toString());
 
-                // custom behavior here
-                // Returning void
-            }, 'void', ['pointer', 'pointer', 'pointer']));
-        } else {
-            console.log("[-] Method not found: +loadShield:");
-        }
+            return; // void return
+        }, 'void', ['pointer', 'pointer'])); // 'id' and 'SEL' are both pointers
 
     } catch (err) {
-        console.log("[-] Exception: " + err.message);
+        console.error("[-] Failed to replace method: " + err);
     }
 } else {
-    console.log("[-] Objective-C Runtime is not available.");
+    console.log("Objective-C runtime is not available.");
 }
