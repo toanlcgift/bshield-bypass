@@ -2,13 +2,12 @@
   "compilerOptions": {
     "target": "es2020",
     "lib": [ "es2020" ],
-    "alwaysStrict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
+    "allowJs": true,
+    "noEmit": true,
+    "strict": true,
+    "esModuleInterop": true,
     "moduleResolution": "node",
     "baseUrl": "./node_modules",
-    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": [

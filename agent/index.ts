@@ -320,7 +320,7 @@ if (ObjC.available) {
             for (let i = 0; i < jbPaths.length; i++) {
                 if (path === jbPaths[i]) {
                     this.jailbroken = true;
-                    ///console.log(`\n\x1b[31m    [-] Detected JB Detection path : ${path}\x1b[0m`);
+                    console.log(`\n\x1b[31m    [-] Detected JB Detection path : ${path}\x1b[0m`);
                     break;
                 }
             }
@@ -328,7 +328,7 @@ if (ObjC.available) {
         onLeave(retval) {
             if (this.jailbroken) {
                 retval.replace(new NativePointer(0x0));
-                ///console.log(`\x1b[32m    [-] Bypassed with: ${retval}\x1b[0m`);
+                console.log(`\x1b[32m    [-] Bypassed with: ${retval}\x1b[0m`);
             }
         }
     });
@@ -346,12 +346,12 @@ if (ObjC.available) {
     Interceptor.attach(hookWriteToFile.implementation, {
         onEnter(args) {
             var path = new ObjC.Object(args[2]).toString();
-            ///console.log(`\x1b[33m\n  [+] Entering writeToFile: ${path}\x1b[0m`);
+            console.log(`\x1b[33m\n  [+] Entering writeToFile: ${path}\x1b[0m`);
             this.jailbreakDetection = false;
 
             for (var i = 0; i < jailbreakPathsWriteToFile.length; i++) {
                 if (path.indexOf(jailbreakPathsWriteToFile[i]) !== -1) {
-                    ///console.log(`\x1b[31m    [+] Detected jailbreak path: ${path}\x1b[0m`);
+                    console.log(`\x1b[31m    [+] Detected jailbreak path: ${path}\x1b[0m`);
                     this.jailbreakDetection = true;
                     this.errorPtr = args[5];
                     break;
@@ -364,7 +364,7 @@ if (ObjC.available) {
             if (this.jailbreakDetection) {
                 var error = ObjC.classes.NSError.alloc();
                 this.errorPtr.writePointer(error);
-                ///console.log(`\x1b[32m    [-] Jailbreak detection bypassed!\x1b[0m\n`);
+                console.log(`\x1b[32m    [-] Jailbreak detection bypassed!\x1b[0m\n`);
             }
         }
     });
@@ -384,23 +384,23 @@ if (ObjC.available) {
     Interceptor.attach(hookCanOpenURL.implementation, {
         onEnter(args) {
             var url = new ObjC.Object(args[2]).toString();
-            ///console.log(`\x1b[33m\n  [+] Entering canOpenURL: ${url}\x1b[0m`);
+            console.log(`\x1b[33m\n  [+] Entering canOpenURL: ${url}\x1b[0m`);
             this.jailbreakDetection = false;
 
             for (var i = 0; i < forbiddenURLs.length; i++) {
                 if (url.includes(forbiddenURLs[i])) {
-                    ///console.log(`\x1b[31m    [+] Detected forbidden URL: ${url}\x1b[0m`);
+                    console.log(`\x1b[31m    [+] Detected forbidden URL: ${url}\x1b[0m`);
                     this.jailbreakDetection = true;
                     break;
                 }
             }
         },
         onLeave(retval) {
-            ///console.log(`\x1b[33m    [-] Leaving canOpenURL. Jailbreak detection attempt: ${this.jailbreakDetection}, ReturnValue: ${retval}\x1b[0m`);
+            console.log(`\x1b[33m    [-] Leaving canOpenURL. Jailbreak detection attempt: ${this.jailbreakDetection}, ReturnValue: ${retval}\x1b[0m`);
 
             if (this.jailbreakDetection) {
                 retval.replace(new NativePointer(0x00));
-                ///console.log(`\x1b[32m    [-] Jailbreak detection bypassed! manipulated return value ${retval}\x1b[0m\n`);
+                console.log(`\x1b[32m    [-] Jailbreak detection bypassed! manipulated return value ${retval}\x1b[0m\n`);
             }
         }
     });
@@ -408,24 +408,24 @@ if (ObjC.available) {
 
     // Fork Bypass
     //const libc = Module.findBaseAddress('libc.so');
-    const forkFunc = new NativeFunction(Module.findExportByName('libc.so', 'fork'), 'int', []);
+    //const forkFunc = new NativeFunction(Process.getModuleByName('libc.so').getExportByName('fork'), 'int', []);
 
-    Interceptor.attach(forkFunc, {
-        onEnter(args) {
-            console.log('\x1b[33m[+]\x1b[0m \x1b[36mfork() function called\x1b[0m' + args[0].readUtf8String());
-        },
-        onLeave(retval) {
-            console.log('\x1b[33m[-]\x1b[0m \x1b[36mfork() function returned (before modification):\x1b[0m', retval);
+    //Interceptor.attach(forkFunc, {
+    //    onEnter(args) {
+    //        console.log('\x1b[33m[+]\x1b[0m \x1b[36mfork() function called\x1b[0m' + args[0].readUtf8String());
+    //    },
+    //    onLeave(retval) {
+    //        console.log('\x1b[33m[-]\x1b[0m \x1b[36mfork() function returned (before modification):\x1b[0m', retval);
 
-            // Set the return value to -1 (indicating failure)
-            (this.context as Arm64CpuContext).x0 = ptr(-1);
-            // Modify the return address to skip the original return instruction
-            (this.context as Arm64CpuContext).lr = (this.context as Arm64CpuContext).lr.add(4);
+    //        // Set the return value to -1 (indicating failure)
+    //        (this.context as Arm64CpuContext).x0 = ptr(-1);
+    //        // Modify the return address to skip the original return instruction
+    //        (this.context as Arm64CpuContext).lr = (this.context as Arm64CpuContext).lr.add(4);
 
-            ///console.log('\x1b[33m[-]\x1b[0m \x1b[36mfork() function returned (after modification):\x1b[0m', this.context.x0);
-            ///console.log('\x1b[33m[-]\x1b[0m \x1b[36mReturn address (after modification):\x1b[0m', this.context.lr);
-        },
-    });
+    //        console.log('\x1b[33m[-]\x1b[0m \x1b[36mfork() function returned (after modification):\x1b[0m', this.context.x0);
+    //        console.log('\x1b[33m[-]\x1b[0m \x1b[36mReturn address (after modification):\x1b[0m', this.context.lr);
+    //    },
+    //});
 
 
     // Sysctl libfile open bypass
@@ -446,7 +446,7 @@ if (ObjC.available) {
         "/Library/MobileSubstrate/DynamicLibraries/afc2dSupport.plist"
     ];
 
-    const openFunc = Module.findExportByName(null, "open");
+    const openFunc = Process.getModuleByName('bshield').getExportByName('open');
 
     Interceptor.attach(openFunc, {
         onEnter: function (args) {
@@ -454,12 +454,12 @@ if (ObjC.available) {
             const filePath = args[0].readUtf8String();
 
             // Check if the file path is in the array
-            if (pathsToMatch.includes(filePath)) {
+            if (pathsToMatch.includes(filePath ?? " ")) {
                 // Set a flag to indicate that the path matches
                 this.matched = true;
 
                 // Print the matched path with color
-                ///console.log(`  \x1b[32mMatched path:\x1b[0m \x1b[36m${filePath}\x1b[0m`);
+                console.log(`  \x1b[32mMatched path:\x1b[0m \x1b[36m${filePath}\x1b[0m`);
             } else {
                 // Reset the flag for non-matching paths
                 this.matched = false;
@@ -473,7 +473,7 @@ if (ObjC.available) {
                 // Skip the original open() call by modifying the return address
                 (this.context as Arm64CpuContext).lr = (this.context as Arm64CpuContext).lr.add(4);
 
-                ///console.log(`  \x1b[33mChanged syscall value from ${retval} to failure\x1b[0m`);
+                console.log(`  \x1b[33mChanged syscall value from ${retval} to failure\x1b[0m`);
             }
         }
     });
@@ -524,21 +524,21 @@ if (ObjC.available) {
         "Crane.dylib"
     ];
 
-    Interceptor.attach(Module.findExportByName(null, 'dlopen'), {
+    Interceptor.attach(Process.getModuleByName('bshield').getExportByName('dlopen'), {
         onEnter: function (args) {
             if (!args[0].isNull()) {
                 var filename = args[0].readUtf8String();
-                var pathComponents = filename.split('/');
+                var pathComponents = (filename ?? "").split('/');
                 var libraryName = pathComponents[pathComponents.length - 1];
                 for (var i = 0; i < jbLibs.length; i++) {
                     if (libraryName.indexOf(jbLibs[i]) !== -1) {
                         args[0] = NULL;
-                        /////console.log("[*] Intercepted dlopen for library: " + libraryName);
+                        //console.log("[*] Intercepted dlopen for library: " + libraryName);
                         return;
                     }
                 }
             } else {
-                /////console.log("Invalid memory address for filename");
+                //console.log("Invalid memory address for filename");
             }
         },
         onLeave: function (retval) {
@@ -547,19 +547,18 @@ if (ObjC.available) {
         }
     });
 
-
-    Interceptor.attach(Module.findExportByName(null, '_dyld_get_image_name'), {
+    Interceptor.attach(Process.getModuleByName('bshield').getExportByName('_dyld_get_image_name'), {
         onLeave: function (retval) {
             if (!retval.isNull()) {
                 try {
                     var originalName = retval.readUtf8String();
                     for (var i = 0; i < jbLibs.length; i++) {
-                        if (originalName.includes(jbLibs[i])) {
+                        if ((originalName ?? "").includes(jbLibs[i])) {
                             var modifiedName = "/System/Library/Frameworks/Library.dylib";
                             retval.writeUtf8String(modifiedName);
-                            // ///console.log("[*] Intercepted library: " + jbLibs[i]);
-                            // ///console.log("[*] Modified library name: " + modifiedName);
-                            // ///console.log("[*] Original Dyld image name: " + originalName);
+                            // console.log("[*] Intercepted library: " + jbLibs[i]);
+                            // console.log("[*] Modified library name: " + modifiedName);
+                            // console.log("[*] Original Dyld image name: " + originalName);
                             return;
                         }
                     }
@@ -575,7 +574,7 @@ if (ObjC.available) {
 
 
     // Hooking stat64
-    const libSystemBdylibStat64 = Module.findExportByName("libSystem.B.dylib", "stat64");
+    const libSystemBdylibStat64 = Process.getModuleByName('libSystem.B.dylib').findExportByName("stat64");
     if (libSystemBdylibStat64) {
         Interceptor.attach(libSystemBdylibStat64, {
             onEnter: function (args) {
@@ -594,7 +593,7 @@ if (ObjC.available) {
                 }
 
                 if (!this.is_common_path) {
-                    /////console.log(`stat64: bypass ` + this.arg);
+                    //console.log(`stat64: bypass ` + this.arg);
                     retval.replace(new NativePointer(-1));
                 }
             }
@@ -602,7 +601,7 @@ if (ObjC.available) {
     }
 
     // Hooking libSystemBdylib stat
-    const libSystemBdylibStat = Module.findExportByName("libSystem.B.dylib", "stat");
+    const libSystemBdylibStat = Process.getModuleByName('libSystem.B.dylib').findExportByName("stat");
     if (libSystemBdylibStat) {
         Interceptor.attach(libSystemBdylibStat, {
             onEnter: function (args) {
@@ -620,7 +619,7 @@ if (ObjC.available) {
                 }
 
                 if (!this.is_common_path) {
-                    /////console.log(`stat: bypass ` + this.arg);
+                    //console.log(`stat: bypass ` + this.arg);
                     retval.replace(new NativePointer(-1));
                 }
             }
@@ -628,16 +627,16 @@ if (ObjC.available) {
     }
 
     // Hooking lstat file check
-    var lstatPtr = Module.findExportByName(null, 'lstat');
+    var lstatPtr = Process.mainModule.findExportByName('lstat');
     if (lstatPtr !== null) {
         Interceptor.attach(lstatPtr, {
             onEnter: function (args) {
                 var path = args[0].readUtf8String();
                 for (var i = 0; i < jbPaths.length; i++) {
-                    if (path.indexOf(jbPaths[i]) !== -1) {
+                    if ((path ?? "").indexOf(jbPaths[i]) !== -1) {
                         // Return null instead of performing the lstat operation
                         args[0] = NULL;
-                        ///console.log("[*] Intercepted lstat for path matching: " + jbPaths[i]);
+                        console.log("[*] Intercepted lstat for path matching: " + jbPaths[i]);
                         return;
                     }
                 }
@@ -647,41 +646,41 @@ if (ObjC.available) {
             }
         });
     } else {
-        ///console.log("[-] lstat not found");
+        console.log("[-] lstat not found");
     }
 
     // Hooking readlink file check
-    var readlinkPtr = Module.findExportByName(null, 'readlink');
+    var readlinkPtr = Process.mainModule.findExportByName('readlink');
     if (readlinkPtr !== null) {
         Interceptor.attach(readlinkPtr, {
             onEnter: function (args) {
                 var path = args[0].readUtf8String();
-                if (jbPaths.includes(path)) {
+                if (jbPaths.includes(path ?? "abab")) {
                     args[0] = ptr('0xffffffffffffffff');
                 }
                 else {
                     console.log("readlink:" + path);
                 }
-                ///console.log("[*] \x1b[36mreadlink\x1b[0m called with path: \x1b[33m" + path + "\x1b[0m");
+                console.log("[*] \x1b[36mreadlink\x1b[0m called with path: \x1b[33m" + path + "\x1b[0m");
             },
             onLeave: function (retval) {
                 retval.replace(ptr('0xffffffffffffffff'));
-                ///console.log("[*] \x1b[36mreadlink\x1b[0m bypassed with value: \x1b[32m" + retval + "\x1b[0m");
+                console.log("[*] \x1b[36mreadlink\x1b[0m bypassed with value: \x1b[32m" + retval + "\x1b[0m");
             }
         });
     } else {
-        ///console.log("[-] \x1b[31mreadlink\x1b[0m not found");
+        console.log("[-] \x1b[31mreadlink\x1b[0m not found");
     }
 
 
 
     // Hooking open file access function
-    Interceptor.attach(Module.findExportByName(null, "open"), {
+    Interceptor.attach(Process.getModuleByName('bshield').findExportByName('open') ?? ptr(0x0), {
         onEnter: function (args) {
             var filename = args[0].readUtf8String();
-            if (jbPaths.includes(filename)) {
+            if (jbPaths.includes(filename ?? "zxczxc")) {
                 args[0] = ptr('0xffffffffffffffff');
-                ///console.log("\x1b[36m[*] open called with filename: \x1b[0m" + filename + " \x1b[31m[Jailbreak detection bypassed]\x1b[0m");
+                console.log("\x1b[36m[*] open called with filename: \x1b[0m" + filename + " \x1b[31m[Jailbreak detection bypassed]\x1b[0m");
             }
             else {
                 console.log("open:" + filename);
@@ -689,18 +688,18 @@ if (ObjC.available) {
         },
         onLeave: function (retval) {
             if (retval.equals(ptr('0xffffffffffffffff'))) {
-                /////console.log("\x1b[32m[*] open returned: \x1b[0m" + retval);
+                //console.log("\x1b[32m[*] open returned: \x1b[0m" + retval);
             }
         }
     });
 
     // Hooking open file access function
-    Interceptor.attach(Module.findExportByName('bshield', "_open"), {
+    Interceptor.attach(Process.getModuleByName('bshield').findExportByName('_open') ?? ptr(0x0), {
         onEnter: function (args) {
             var filename = args[0].readUtf8String();
-            if (jbPaths.includes(filename)) {
+            if (jbPaths.includes(filename ?? "abab")) {
                 args[0] = ptr('0xffffffffffffffff');
-                ///console.log("\x1b[36m[*] open called with filename: \x1b[0m" + filename + " \x1b[31m[Jailbreak detection bypassed]\x1b[0m");
+                console.log("\x1b[36m[*] open called with filename: \x1b[0m" + filename + " \x1b[31m[Jailbreak detection bypassed]\x1b[0m");
             }
             else {
                 console.log("_open:" + filename);
@@ -708,30 +707,30 @@ if (ObjC.available) {
         },
         onLeave: function (retval) {
             if (retval.equals(ptr('0xffffffffffffffff'))) {
-                /////console.log("\x1b[32m[*] open returned: \x1b[0m" + retval);
+                //console.log("\x1b[32m[*] open returned: \x1b[0m" + retval);
             }
         }
     });
 
     // Hooking access file access function
-    Interceptor.attach(Module.findExportByName(null, "access"), {
+    Interceptor.attach(Process.getModuleByName('bshield').findExportByName('access') ?? ptr(0x0), {
         onEnter: function (args) {
             var filename = args[0].readUtf8String();
-            if (jbPaths.includes(filename)) {
+            if (jbPaths.includes(filename ?? "")) {
                 args[0] = ptr('0xffffffffffffffff');
-                ///console.log("\x1b[36m[*] access called with filename: \x1b[0m" + filename + " \x1b[31m[Jailbreak detection bypassed]\x1b[0m");
+                console.log("\x1b[36m[*] access called with filename: \x1b[0m" + filename + " \x1b[31m[Jailbreak detection bypassed]\x1b[0m");
             }
-            else{
+            else {
                 console.log("access:" + filename);
             }
         },
         onLeave: function (retval) {
             if (retval.equals(ptr('0xffffffffffffffff'))) {
-                /////console.log("\x1b[32m[*] access returned: \x1b[0m" + retval);
+                //console.log("\x1b[32m[*] access returned: \x1b[0m" + retval);
             }
         }
     });
 
 } else {
-    ///console.log("\x1b[31mObjective-C Runtime is not available\x1b[0m");
+    console.log("\x1b[31mObjective-C Runtime is not available\x1b[0m");
 }
